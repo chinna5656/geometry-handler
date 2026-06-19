@@ -1,5 +1,5 @@
-@import "mapbox-gl/dist/mapbox-gl.css";
-@import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
+@import "leaflet/dist/leaflet.css";
+@import "leaflet-draw/dist/leaflet.draw.css";
 
 @tailwind base;
 @tailwind components;
@@ -14,4 +14,37 @@ body,
 body {
   margin: 0;
   background: #f8fafc;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #dbeafe;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  padding: 0;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+}
+
+.ml-anomaly-boundary {
+  animation: anomaly-pulse 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgb(220 38 38 / 0.85));
+}
+
+@keyframes anomaly-pulse {
+  0%,
+  100% {
+    stroke-opacity: 1;
+    stroke-width: 4;
+  }
+
+  50% {
+    stroke-opacity: 0.45;
+    stroke-width: 8;
+  }
 }

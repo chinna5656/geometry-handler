@@ -1,10 +1,12 @@
 import { useState } from "react";
 
 import { AnalyticsPanel } from "./components/AnalyticsPanel.jsx";
+import { AlertPanel } from "./components/AlertPanel.jsx";
 import { MapView } from "./components/MapView.jsx";
 
 export default function App() {
   const [activeRaster, setActiveRaster] = useState(null);
+  const [activeLstRaster, setActiveLstRaster] = useState(null);
   const [drawnPolygon, setDrawnPolygon] = useState(null);
 
   return (
@@ -31,13 +33,28 @@ export default function App() {
           ) : null}
         </div>
 
+        <div className="mt-4 rounded border border-slate-200 bg-slate-50 p-4 text-sm">
+          <p className="font-medium">Active LST raster</p>
+          <p className="mt-2 break-all text-slate-600">
+            {activeLstRaster?.scene?.id ?? "Generate a thermal overlay to inspect crop fever."}
+          </p>
+          {activeLstRaster ? (
+            <p className="mt-3 text-slate-600">
+              Landsat cloud cover: {activeLstRaster.scene.cloud_cover.toFixed(1)}%
+            </p>
+          ) : null}
+        </div>
+
         <AnalyticsPanel polygon={drawnPolygon} />
+        <AlertPanel polygon={drawnPolygon} />
       </aside>
 
       <section className="min-w-0 flex-1">
         <MapView
           activeRaster={activeRaster}
+          activeLstRaster={activeLstRaster}
           onPolygonChange={setDrawnPolygon}
+          onLstReady={setActiveLstRaster}
           onRasterReady={setActiveRaster}
         />
       </section>

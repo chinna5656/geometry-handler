@@ -48,6 +48,27 @@ export async function createNdviRaster({ polygon, daysBack = 90, maxCloudCover =
   return response.json();
 }
 
+export async function createLstRaster({ polygon, daysBack = 120, maxCloudCover = 30 }) {
+  const response = await fetch(`${API_BASE_URL}/lst/raster`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      polygon,
+      days_back: daysBack,
+      max_cloud_cover: maxCloudCover
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail ?? "Unable to create LST raster");
+  }
+
+  return response.json();
+}
+
 export async function inspectNdviPixel({ sessionId, longitude, latitude }) {
   const params = new URLSearchParams({
     lon: String(longitude),
@@ -58,6 +79,21 @@ export async function inspectNdviPixel({ sessionId, longitude, latitude }) {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.detail ?? "Unable to inspect NDVI pixel");
+  }
+
+  return response.json();
+}
+
+export async function inspectLstPixel({ sessionId, longitude, latitude }) {
+  const params = new URLSearchParams({
+    lon: String(longitude),
+    lat: String(latitude)
+  });
+
+  const response = await fetch(`${API_BASE_URL}/lst/raster/${sessionId}/inspect?${params}`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail ?? "Unable to inspect LST pixel");
   }
 
   return response.json();
@@ -85,6 +121,37 @@ export async function fetchNdviTimeSeries({
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.detail ?? "Unable to load NDVI time series");
+  }
+
+  return response.json();
+}
+
+export async function scoreCropAnomaly({
+  polygon,
+  startDate,
+  endDate,
+  maxCloudCover = 35,
+  rainfallWindowDays = 7,
+  contamination = 0.12
+}) {
+  const response = await fetch(`${API_BASE_URL}/anomaly/score`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      polygon,
+      start_date: startDate,
+      end_date: endDate,
+      max_cloud_cover: maxCloudCover,
+      rainfall_window_days: rainfallWindowDays,
+      contamination
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail ?? "Unable to score crop anomaly risk");
   }
 
   return response.json();

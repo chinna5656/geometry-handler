@@ -3,8 +3,10 @@ import mapboxgl from "mapbox-gl";
 import { useEffect, useRef, useState } from "react";
 
 import {
+  createLstRaster,
   createNdviRaster,
   fetchPlots,
+  inspectLstPixel,
   inspectNdviPixel
 } from "../lib/api.js";
 
@@ -25,8 +27,24 @@ const MAP_STYLE = mapboxgl.accessToken
       layers: [{ id: "osm", type: "raster", source: "osm" }]
     };
 
-export function MapView({ activeRaster, onPolygonChange, onRasterReady }) {
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+export function MapView({
+  activeLstRaster,
+  activeRaster,
+  onLstReady,
+  onPolygonChange,
+  onRasterReady
+}) {
   const containerRef = useRef(null);
+  const lstRasterRef = useRef(null);
   const mapRef = useRef(null);
   const rasterRef = useRef(null);
   const [drawnPolygon, setDrawnPolygon] = useState(null);
@@ -35,6 +53,10 @@ export function MapView({ activeRaster, onPolygonChange, onRasterReady }) {
   useEffect(() => {
     rasterRef.current = activeRaster;
   }, [activeRaster]);
+
+  useEffect(() => {
+    lstRasterRef.current = activeLstRaster;
+  }, [activeLstRaster]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -155,6 +177,42 @@ export function MapView({ activeRaster, onPolygonChange, onRasterReady }) {
     );
   }, [activeRaster]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !activeLstRaster) {
+      return;
+    }
+
+    const sourceId = "lst-raster";
+    const layerId = "lst-raster-layer";
+
+    if (map.getLayer(layerId)) {
+      map.removeLayer(layerId);
+    }
+    if (map.getSource(sourceId)) {
+      map.removeSource(sourceId);
+    }
+
+    map.addSource(sourceId, {
+      type: "raster",
+      tiles: [activeLstRaster.tile_url],
+      tileSize: 256
+    });
+
+    map.addLayer(
+      {
+        id: layerId,
+        type: "raster",
+        source: sourceId,
+        paint: {
+          "raster-opacity": 0.58,
+          "raster-resampling": "linear"
+        }
+      },
+      map.getLayer("plot-outline") ? "plot-outline" : undefined
+    );
+  }, [activeLstRaster]);
+
   async function handleGenerateRaster() {
     if (!drawnPolygon) {
       setStatus("Draw a polygon first");
@@ -175,37 +233,79 @@ export function MapView({ activeRaster, onPolygonChange, onRasterReady }) {
     }
   }
 
+  async function handleGenerateLstRaster() {
+    if (!drawnPolygon) {
+      setStatus("Draw a polygon first");
+      return;
+    }
+
+    setStatus("Fetching Landsat thermal data and computing LST");
+    try {
+      const raster = await createLstRaster({
+        polygon: drawnPolygon,
+        daysBack: 120,
+        maxCloudCover: 30
+      });
+      onLstReady(raster);
+      setStatus("Thermal overlay ready. Click inside the plot for NDVI + LST.");
+    } catch (error) {
+      setStatus(error.message);
+    }
+  }
+
   async function handleMapClick(event) {
-    const raster = rasterRef.current;
-    if (!raster) {
+    const ndviRaster = rasterRef.current;
+    const lstRaster = lstRasterRef.current;
+    if (!ndviRaster && !lstRaster) {
       return;
     }
 
     const longitude = event.lngLat.lng;
     const latitude = event.lngLat.lat;
 
-    try {
-      const result = await inspectNdviPixel({
-        sessionId: raster.session_id,
-        longitude,
-        latitude
-      });
+    const lines = [
+      `Lon: ${longitude.toFixed(6)}`,
+      `Lat: ${latitude.toFixed(6)}`
+    ];
 
-      new mapboxgl.Popup()
-        .setLngLat([longitude, latitude])
-        .setHTML(
-          `<strong>NDVI: ${result.ndvi.toFixed(2)}</strong><br/>` +
-            `${result.class_name}<br/>` +
-            `Lon: ${result.longitude.toFixed(6)}<br/>` +
-            `Lat: ${result.latitude.toFixed(6)}`
-        )
-        .addTo(mapRef.current);
-    } catch (error) {
-      new mapboxgl.Popup()
-        .setLngLat([longitude, latitude])
-        .setText(error.message)
-        .addTo(mapRef.current);
+    if (ndviRaster) {
+      try {
+        const result = await inspectNdviPixel({
+          sessionId: ndviRaster.session_id,
+          longitude,
+          latitude
+        });
+        lines.unshift(
+          `<strong>NDVI: ${result.ndvi.toFixed(2)}</strong> - ${escapeHtml(result.class_name)}`
+        );
+      } catch (error) {
+        lines.unshift(`NDVI: ${escapeHtml(error.message)}`);
+      }
     }
+
+    if (lstRaster) {
+      try {
+        const result = await inspectLstPixel({
+          sessionId: lstRaster.session_id,
+          longitude,
+          latitude
+        });
+        lines.splice(
+          ndviRaster ? 1 : 0,
+          0,
+          `<strong>LST: ${result.lst_celsius.toFixed(1)}&deg;C</strong> - ${escapeHtml(
+            result.class_name
+          )}`
+        );
+      } catch (error) {
+        lines.splice(ndviRaster ? 1 : 0, 0, `LST: ${escapeHtml(error.message)}`);
+      }
+    }
+
+    new mapboxgl.Popup()
+      .setLngLat([longitude, latitude])
+      .setHTML(lines.join("<br/>"))
+      .addTo(mapRef.current);
   }
 
   return (
@@ -222,12 +322,31 @@ export function MapView({ activeRaster, onPolygonChange, onRasterReady }) {
           >
             Generate NDVI Raster
           </button>
+          <button
+            className="rounded bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+            disabled={!drawnPolygon}
+            onClick={handleGenerateLstRaster}
+            type="button"
+          >
+            Generate LST Raster
+          </button>
           <span className="text-sm text-slate-600">{status}</span>
         </div>
-        <div className="mt-3 h-2 w-full overflow-hidden rounded bg-gradient-to-r from-red-600 via-yellow-400 to-green-800" />
-        <div className="mt-1 flex justify-between text-xs text-slate-500">
-          <span>Stressed / bare</span>
-          <span>Healthy dense crop</span>
+        <div className="mt-3 grid gap-2">
+          <div>
+            <div className="h-2 w-full overflow-hidden rounded bg-gradient-to-r from-red-600 via-yellow-400 to-green-800" />
+            <div className="mt-1 flex justify-between text-xs text-slate-500">
+              <span>NDVI stressed / bare</span>
+              <span>Healthy dense crop</span>
+            </div>
+          </div>
+          <div>
+            <div className="h-2 w-full overflow-hidden rounded bg-gradient-to-r from-blue-600 via-yellow-400 to-red-950" />
+            <div className="mt-1 flex justify-between text-xs text-slate-500">
+              <span>Cool hydrated canopy</span>
+              <span>Crop fever</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

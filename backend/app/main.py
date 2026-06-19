@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, ndvi, plots
+from app.api.routes import anomaly, health, lst, ndvi, plots
 from app.core.config import settings
 
 
@@ -24,6 +24,10 @@ def create_app() -> FastAPI:
     app.include_router(plots.router, prefix=settings.api_prefix)
     app.include_router(ndvi.router, prefix=settings.api_prefix)
     app.include_router(ndvi.router, prefix="/api")
+    app.include_router(lst.router, prefix=settings.api_prefix)
+    app.include_router(lst.router, prefix="/api")
+    app.include_router(anomaly.router, prefix=settings.api_prefix)
+    app.include_router(anomaly.router, prefix="/api")
 
     return app
 

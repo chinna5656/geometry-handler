@@ -88,4 +88,25 @@ The dashboard posts drawn plot boundaries to `POST /api/v1/ndvi/time-series` wit
 ```
 
 The same endpoint is also available at `POST /api/ndvi/time-series`.
+
+## Land Surface Temperature
+
+The thermal workflow posts a drawn plot polygon to `POST /api/v1/lst/raster` or `POST /api/lst/raster`. The backend searches Microsoft Planetary Computer Landsat 8/9 Collection 2 Level-2 scenes, selects the latest low-cloud surface temperature asset, applies scale and offset metadata, converts Kelvin to Celsius, masks cloudy pixels with `QA_PIXEL`, and serves a polygon-clipped raster tile layer:
+
+```text
+GET /api/v1/lst/raster/{session_id}/tiles/{z}/{x}/{y}.png
+GET /api/v1/lst/raster/{session_id}/inspect?lon=...&lat=...
+```
+
+The frontend can display the 30 m Landsat thermal raster as a cool-blue to dark-red overlay. Mapbox GL resamples the tile visually over the same web map grid as the Sentinel-2 NDVI overlay, and the click inspector reports both NDVI and LST when both sessions are active.
+
+## Crop Anomaly Early Warning
+
+`POST /api/v1/anomaly/score` and `POST /api/anomaly/score` train a plot-specific Isolation Forest from historical fused features:
+
+- Sentinel-2 mean NDVI
+- Landsat 8/9 mean LST in Celsius
+- CHIRPS rolling cumulative rainfall
+
+The service aligns multi-sensor observations by date with pandas, validates the plot with GeoPandas, scales and imputes features, trains `sklearn.ensemble.IsolationForest`, and scores the latest observation. Negative Isolation Forest decision scores are returned as `Semi-Abrupt Statistical Anomaly`, indicating elevated pest or disease outbreak risk.
 "# geometry-handler" 

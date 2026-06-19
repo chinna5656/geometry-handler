@@ -10,15 +10,16 @@ export default function App() {
   const [drawnPolygon, setDrawnPolygon] = useState(null);
 
   return (
-    <main className="flex h-full bg-slate-50 text-slate-900">
-      <aside className="z-10 w-96 border-r border-slate-200 bg-white p-5 shadow-sm">
+    <main className="flex h-full min-w-0 bg-slate-50 text-slate-900">
+      <aside className="z-10 h-full w-96 shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-5 shadow-sm">
         <p className="text-sm font-medium uppercase tracking-wide text-emerald-700">
           Crop Health Monitor
         </p>
         <h1 className="mt-2 text-2xl font-semibold">Sentinel-2 NDVI</h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Draw a field boundary, generate an NDVI overlay from Sentinel-2 B08 and
-          B04, then click the raster to inspect pixel-level crop vigor.
+          Draw a plot polygon on Esri World Imagery, generate an NDVI overlay
+          from Sentinel-2 B08 and B04, then click the raster to inspect
+          pixel-level crop vigor.
         </p>
 
         <div className="mt-6 rounded border border-slate-200 bg-slate-50 p-4 text-sm">

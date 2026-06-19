@@ -5,7 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Precision Agriculture API"
     api_prefix: str = "/api/v1"
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    cors_origins: list[str] = Field(
+        default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
+    )
     planetary_computer_stac_url: AnyHttpUrl = "https://planetarycomputer.microsoft.com/api/stac/v1"
 
     model_config = SettingsConfigDict(

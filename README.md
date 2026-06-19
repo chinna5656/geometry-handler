@@ -4,11 +4,11 @@ Starter architecture for a plot-level crop health application using Sentinel-2 S
 
 ## Stack
 
-- Frontend: React, Vite, Tailwind CSS, Mapbox GL JS
+- Frontend: React, Vite, Tailwind CSS, Leaflet.js, Leaflet.draw
 - Backend: FastAPI, rasterio, geopandas, shapely, pyproj
 - Data source: Microsoft Planetary Computer STAC API for Sentinel-2 L2A
 
-Mapbox GL JS is used for the map because its WebGL renderer handles raster tile overlays, opacity changes, and pan/zoom interactions more smoothly than DOM/canvas tile renderers when visualizing 10 m Sentinel-2 products.
+Leaflet is used for the Esri World Imagery map interface because it provides stable raster basemap rendering, polygon drawing tools, and tile overlays without relying on WebGL.
 
 ## Project Layout
 
@@ -61,7 +61,7 @@ Create `.env` files from the examples before running in a real environment.
 
 ## Interactive NDVI Workflow
 
-1. Draw a plot polygon in the Mapbox GL interface.
+1. Draw a plot polygon in the Leaflet Esri World Imagery map interface.
 2. The frontend posts that GeoJSON feature to `POST /api/v1/ndvi/raster`.
 3. The backend searches Microsoft Planetary Computer for the latest low-cloud Sentinel-2 L2A scene, reads `B08` and `B04`, and computes:
 
@@ -69,7 +69,7 @@ Create `.env` files from the examples before running in a real environment.
 NDVI = (NIR - Red) / (NIR + Red)
 ```
 
-4. The response returns a polygon-scoped raster tile URL. The frontend adds it as a color-ramped Mapbox raster layer.
+4. The response returns a polygon-scoped raster tile URL. The frontend adds it as a color-ramped Leaflet raster tile layer.
 5. Clicking inside the overlay calls `GET /api/v1/ndvi/raster/{session_id}/inspect?lon=...&lat=...` and displays the exact coordinate plus sampled pixel NDVI.
 
 For compatibility with the requested route shape, the NDVI router is also mounted under `/api`, so `POST /api/ndvi/raster` is available in addition to the versioned endpoint.
@@ -98,7 +98,7 @@ GET /api/v1/lst/raster/{session_id}/tiles/{z}/{x}/{y}.png
 GET /api/v1/lst/raster/{session_id}/inspect?lon=...&lat=...
 ```
 
-The frontend can display the 30 m Landsat thermal raster as a cool-blue to dark-red overlay. Mapbox GL resamples the tile visually over the same web map grid as the Sentinel-2 NDVI overlay, and the click inspector reports both NDVI and LST when both sessions are active.
+The frontend can display the 30 m Landsat thermal raster as a cool-blue to dark-red Leaflet overlay, and the click inspector reports both NDVI and LST when both sessions are active.
 
 ## Crop Anomaly Early Warning
 

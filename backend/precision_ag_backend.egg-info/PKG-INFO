@@ -1,0 +1,22 @@
+Metadata-Version: 2.4
+Name: precision-ag-backend
+Version: 0.1.0
+Summary: FastAPI geospatial backend for Sentinel-2 NDVI crop health analytics.
+Requires-Python: >=3.11
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.30.0
+Requires-Dist: pydantic-settings>=2.4.0
+Requires-Dist: rasterio>=1.3.10
+Requires-Dist: geopandas>=1.0.0
+Requires-Dist: shapely>=2.0.0
+Requires-Dist: pyproj>=3.6.0
+Requires-Dist: pystac-client>=0.8.0
+Requires-Dist: planetary-computer>=1.0.0
+Requires-Dist: mercantile>=1.2.1
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: rio-tiler>=6.6.0
+Requires-Dist: matplotlib>=3.9.0
+Provides-Extra: dev
+Requires-Dist: ruff>=0.6.0; extra == "dev"
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+Requires-Dist: httpx>=0.27.0; extra == "dev"

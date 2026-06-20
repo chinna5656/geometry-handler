@@ -125,6 +125,7 @@ export function MapView({
     lst: true,
     anomalies: true
   });
+  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [comparePosition, setComparePosition] = useState(50);
   const [status, setStatus] = useState("Loading plot boundaries.");
@@ -544,104 +545,133 @@ export function MapView({
     <div className="relative h-full overflow-hidden bg-slate-900">
       <div ref={mapElementRef} className="h-full w-full" />
 
-      <section className="absolute left-3 right-3 top-3 z-[1000] max-h-[calc(100%-7rem)] overflow-y-auto rounded border border-white/20 bg-white/95 p-4 shadow-xl backdrop-blur sm:left-4 sm:right-auto sm:top-4 sm:w-80">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              GIS Map View
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900">Satellite Layers</h2>
-          </div>
-          <span className="rounded bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-            10m / 30m
-          </span>
-        </div>
+      <button
+        aria-controls="gis-layer-panel"
+        aria-expanded={isLayerPanelOpen}
+        aria-label="Open GIS map controls"
+        className="absolute right-3 top-3 z-[1100] flex h-11 w-11 items-center justify-center rounded border border-white/20 bg-white/95 text-slate-900 shadow-xl backdrop-blur hover:bg-slate-50 sm:right-4 sm:top-4"
+        onClick={() => setIsLayerPanelOpen((value) => !value)}
+        type="button"
+      >
+        <span className="space-y-1.5">
+          <span className="block h-0.5 w-5 rounded bg-slate-800" />
+          <span className="block h-0.5 w-5 rounded bg-slate-800" />
+          <span className="block h-0.5 w-5 rounded bg-slate-800" />
+        </span>
+      </button>
 
-        <div className="mt-4 space-y-4 text-sm">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Base map
-            </p>
-            <div className="grid grid-cols-1 gap-2">
-              {Object.entries(BASEMAPS).map(([key, value]) => (
-                <button
-                  className={[
-                    "rounded border px-3 py-2 text-left transition",
-                    baseMap === key
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-800"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  ].join(" ")}
-                  key={key}
-                  onClick={() => setBaseMap(key)}
-                  type="button"
-                >
-                  {value.label}
-                </button>
-              ))}
+      {isLayerPanelOpen ? (
+        <section
+          className="absolute right-3 top-16 z-[1050] max-h-[calc(100%-8rem)] overflow-y-auto rounded border border-white/20 bg-white/95 p-4 shadow-xl backdrop-blur sm:right-4 sm:top-20 sm:w-80"
+          id="gis-layer-panel"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                GIS Map View
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-slate-900">Satellite Layers</h2>
             </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Data layers
-            </p>
-            <div className="space-y-2">
-              <LayerToggle
-                active={layerState.plots}
-                label="Plot Boundaries"
-                onClick={() => toggleLayer("plots")}
-              />
-              <LayerToggle
-                active={layerState.ndvi}
-                label="NDVI - Sentinel-2"
-                onClick={() => toggleLayer("ndvi")}
-              />
-              <LayerToggle
-                active={layerState.lst}
-                label="LST - Landsat 8/9"
-                onClick={() => toggleLayer("lst")}
-              />
-              <LayerToggle
-                active={layerState.anomalies}
-                label="ML Anomaly Heatmap"
-                onClick={() => toggleLayer("anomalies")}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
             <button
-              className="rounded bg-slate-900 px-3 py-2 font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-              disabled={isCreatingRaster}
-              onClick={createRasterPair}
+              aria-label="Close GIS map controls"
+              className="rounded border border-slate-200 px-2 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              onClick={() => setIsLayerPanelOpen(false)}
               type="button"
             >
-              {isCreatingRaster ? "Creating" : "Generate Rasters"}
-            </button>
-            <button
-              className="rounded bg-red-600 px-3 py-2 font-medium text-white hover:bg-red-700"
-              onClick={scanSelectedAnomaly}
-              type="button"
-            >
-              Score Risk
+              X
             </button>
           </div>
 
-          <label className="flex items-center justify-between rounded border border-slate-200 bg-slate-50 px-3 py-2">
-            <span>
-              <span className="block font-medium text-slate-800">Compare Mode</span>
-              <span className="text-xs text-slate-500">NDVI left, LST right</span>
-            </span>
-            <input
-              checked={compareMode}
-              className="h-4 w-4 accent-emerald-600"
-              disabled={!activeRaster?.tile_url || !activeLstRaster?.tile_url}
-              onChange={(event) => setCompareMode(event.target.checked)}
-              type="checkbox"
-            />
-          </label>
-        </div>
-      </section>
+          <div className="mt-4 rounded bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+            10m / 30m satellite overlays
+          </div>
+
+          <div className="mt-4 space-y-4 text-sm">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Base map
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {Object.entries(BASEMAPS).map(([key, value]) => (
+                  <button
+                    className={[
+                      "rounded border px-3 py-2 text-left transition",
+                      baseMap === key
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-800"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    ].join(" ")}
+                    key={key}
+                    onClick={() => setBaseMap(key)}
+                    type="button"
+                  >
+                    {value.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Data layers
+              </p>
+              <div className="space-y-2">
+                <LayerToggle
+                  active={layerState.plots}
+                  label="Plot Boundaries"
+                  onClick={() => toggleLayer("plots")}
+                />
+                <LayerToggle
+                  active={layerState.ndvi}
+                  label="NDVI - Sentinel-2"
+                  onClick={() => toggleLayer("ndvi")}
+                />
+                <LayerToggle
+                  active={layerState.lst}
+                  label="LST - Landsat 8/9"
+                  onClick={() => toggleLayer("lst")}
+                />
+                <LayerToggle
+                  active={layerState.anomalies}
+                  label="ML Anomaly Heatmap"
+                  onClick={() => toggleLayer("anomalies")}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className="rounded bg-slate-900 px-3 py-2 font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                disabled={isCreatingRaster}
+                onClick={createRasterPair}
+                type="button"
+              >
+                {isCreatingRaster ? "Creating" : "Generate Rasters"}
+              </button>
+              <button
+                className="rounded bg-red-600 px-3 py-2 font-medium text-white hover:bg-red-700"
+                onClick={scanSelectedAnomaly}
+                type="button"
+              >
+                Score Risk
+              </button>
+            </div>
+
+            <label className="flex items-center justify-between rounded border border-slate-200 bg-slate-50 px-3 py-2">
+              <span>
+                <span className="block font-medium text-slate-800">Compare Mode</span>
+                <span className="text-xs text-slate-500">NDVI left, LST right</span>
+              </span>
+              <input
+                checked={compareMode}
+                className="h-4 w-4 accent-emerald-600"
+                disabled={!activeRaster?.tile_url || !activeLstRaster?.tile_url}
+                onChange={(event) => setCompareMode(event.target.checked)}
+                type="checkbox"
+              />
+            </label>
+          </div>
+        </section>
+      ) : null}
 
       {compareMode ? (
         <div className="pointer-events-none absolute inset-y-0 left-0 right-0 z-[950]">
